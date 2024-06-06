@@ -2,7 +2,6 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import json
-import sys
 
 # MediaPipe 초기화
 mp_pose = mp.solutions.pose
@@ -74,9 +73,12 @@ def estimate_body_measurements(image, user_height_cm):
             "chestWidth": chest_width_cm
         }
 
-        return body_measurements
+        # 이미지에 신체 부위 표시
+        annotated_image = image.copy()
+        mp_drawing.draw_landmarks(annotated_image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+        return body_measurements, annotated_image
     else:
-        return None
+        return None, None
 
 def main():
     # 이미지 파일 경로
@@ -88,11 +90,16 @@ def main():
         # 사용자의 키 입력 받기 (단위: cm)
         user_height_cm = float(input("사용자의 키를 입력하세요 (단위: cm): "))
 
-        body_measurements = estimate_body_measurements(image, user_height_cm)
+        body_measurements, annotated_image = estimate_body_measurements(image, user_height_cm)
         if body_measurements:
             # JSON 형식으로 변환
             body_measurements_json = json.dumps(body_measurements, ensure_ascii=False)
             print(body_measurements_json)
+
+            # 이미지 출력
+            cv2.imshow('Annotated Image', annotated_image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
         else:
             print("신체 치수를 추정할 수 없습니다.")
     else:
